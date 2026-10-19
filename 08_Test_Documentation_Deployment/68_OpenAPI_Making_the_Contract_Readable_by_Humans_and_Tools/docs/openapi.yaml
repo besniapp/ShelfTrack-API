@@ -1,0 +1,278 @@
+openapi: 3.1.0
+info:
+  title: ShelfTrack API
+  version: 2.0.0
+  description: Reference API built throughout Backend Development with Node.js — ShelfTrack Edition.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Check HTTP process health
+      responses:
+        '200':
+          description: Service is reachable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+  /api/books:
+    get:
+      summary: List, filter, and search books
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { in: query, name: category, schema: { type: string } }
+        - { in: query, name: language, schema: { type: string } }
+        - { in: query, name: year, schema: { type: integer, minimum: 1450, maximum: 2100 } }
+        - { in: query, name: minAvailable, schema: { type: integer, minimum: 0 } }
+        - { in: query, name: q, schema: { type: string } }
+      responses:
+        '200':
+          description: Paginated catalogue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookListResponse' }
+    post:
+      summary: Create a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBook' }
+      responses:
+        '201': { description: Created book }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/books/{bookId}:
+    parameters:
+      - { $ref: '#/components/parameters/BookId' }
+    get:
+      summary: Read one book
+      responses:
+        '200': { description: Book }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Update permitted book fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateBook' }
+      responses:
+        '200': { description: Updated book }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      summary: Delete one book
+      responses:
+        '204': { description: Deleted; no response body }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/members:
+    get:
+      summary: List members
+      responses:
+        '200': { description: Members }
+    post:
+      summary: Create a member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateMember' }
+      responses:
+        '201': { description: Created member }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/members/{memberId}:
+    parameters:
+      - { $ref: '#/components/parameters/MemberId' }
+    get:
+      summary: Read one member
+      responses:
+        '200': { description: Member }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Update one member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateMember' }
+      responses:
+        '200': { description: Updated member }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/loans:
+    get:
+      summary: List loans
+      parameters:
+        - in: query
+          name: active
+          description: true returns active loans, false returns returned loans, omitted returns all loans
+          schema: { type: boolean }
+      responses:
+        '200': { description: Loans }
+    post:
+      summary: Check out a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLoan' }
+      responses:
+        '201': { description: Checked-out loan }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/loans/{loanId}:
+    parameters:
+      - { $ref: '#/components/parameters/LoanId' }
+    get:
+      summary: Read one loan
+      responses:
+        '200': { description: Loan }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/loans/{loanId}/return:
+    parameters:
+      - { $ref: '#/components/parameters/LoanId' }
+    patch:
+      summary: Return an active loan
+      responses:
+        '200': { description: Returned loan }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  parameters:
+    BookId:
+      in: path
+      name: bookId
+      required: true
+      schema: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+    MemberId:
+      in: path
+      name: memberId
+      required: true
+      schema: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+    LoanId:
+      in: path
+      name: loanId
+      required: true
+      schema: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, const: ok }
+    ShelfLocation:
+      type: object
+      additionalProperties: false
+      required: [floor, code]
+      properties:
+        floor: { type: integer, minimum: 0 }
+        code: { type: string, minLength: 1, maxLength: 40 }
+    BookFields:
+      type: object
+      additionalProperties: false
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        isbn: { type: string, minLength: 10, maxLength: 20 }
+        authors:
+          type: array
+          minItems: 1
+          items: { type: string, minLength: 1, maxLength: 120 }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        language: { type: string, minLength: 2, maxLength: 10 }
+        publishedYear: { type: integer, minimum: 1450, maximum: 2100 }
+        totalCopies: { type: integer, minimum: 0 }
+        availableCopies: { type: integer, minimum: 0 }
+        tags:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 40 }
+        shelf: { $ref: '#/components/schemas/ShelfLocation' }
+    CreateBook:
+      allOf:
+        - $ref: '#/components/schemas/BookFields'
+        - type: object
+          required: [title, isbn, authors, category, totalCopies]
+    UpdateBook:
+      allOf:
+        - $ref: '#/components/schemas/BookFields'
+        - type: object
+          minProperties: 1
+    BookListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+    PaginationMeta:
+      type: object
+      required: [page, limit, totalItems, totalPages, hasPreviousPage, hasNextPage]
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1 }
+        totalItems: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+        hasPreviousPage: { type: boolean }
+        hasNextPage: { type: boolean }
+    CreateMember:
+      type: object
+      additionalProperties: false
+      required: [name, email]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email }
+        active: { type: boolean }
+    UpdateMember:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email }
+        active: { type: boolean }
+    CreateLoan:
+      type: object
+      additionalProperties: false
+      required: [bookId, memberId]
+      properties:
+        bookId: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+        memberId: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+        loanDays: { type: integer, minimum: 1, maximum: 60, default: 14 }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: array, items: { type: object } }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Request conflicts with current resource state or a uniqueness rule
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }

@@ -1,0 +1,583 @@
+{
+  "info": {
+    "name": "ShelfTrack API — Acceptance Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"healthy\",()=>pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().status).to.eql(\"ok\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create book",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Practical Node Systems\",\n  \"isbn\": \"978{{$timestamp}}\",\n  \"authors\": [\n    \"Ada Rivers\"\n  ],\n  \"category\": \"software\",\n  \"publishedYear\": 2026,\n  \"totalCopies\": 3,\n  \"shelf\": {\n    \"floor\": 1,\n    \"code\": \"A-10\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"created\",()=>pm.response.to.have.status(201));",
+              "const b=pm.response.json(); pm.environment.set(\"bookId\",b.data._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List books",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books?page=1&limit=20&q=Node",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "q",
+              "value": "Node"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get book",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patch book",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"shelf\": {\n    \"floor\": 3,\n    \"code\": \"C-12\"\n  }\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"updated\",()=>pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.shelf.code).to.eql(\"C-12\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject invalid book",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": 42,\n  \"isbn\": true,\n  \"totalCopies\": \"3\",\n  \"unexpectedAdminFlag\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"invalid body is rejected\",()=>pm.response.to.have.status(400));",
+              "const body=pm.response.json();",
+              "pm.expect(body.error.code).to.eql(\"VALIDATION_ERROR\");",
+              "pm.expect(body.error.details).to.be.an(\"array\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create member",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/members",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "members"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jordan Lee\",\n  \"email\": \"jordan.{{$timestamp}}@example.test\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"created\",()=>pm.response.to.have.status(201));",
+              "const b=pm.response.json(); pm.environment.set(\"memberId\",b.data._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List members",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/members",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "members"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get member",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/members/{{memberId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "members",
+            "{{memberId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patch member",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jordan Lee Updated\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/members/{{memberId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "members",
+            "{{memberId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"updated\",()=>pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.name).to.eql(\"Jordan Lee Updated\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout book",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/loans",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "loans"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bookId\": \"{{bookId}}\",\n  \"memberId\": \"{{memberId}}\",\n  \"loanDays\": 14\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"checked out\",()=>pm.response.to.have.status(201));",
+              "const b=pm.response.json(); pm.environment.set(\"loanId\",b.data._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get loan",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/loans/{{loanId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "loans",
+            "{{loanId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List active loans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/loans?active=true",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "loans"
+          ],
+          "query": [
+            {
+              "key": "active",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Return loan",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/loans/{{loanId}}/return",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "loans",
+            "{{loanId}}",
+            "return"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"returned\",()=>pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.returnedAt).to.not.eql(null);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List returned loans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/loans?active=false",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "loans"
+          ],
+          "query": [
+            {
+              "key": "active",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"ok\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete book",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"deleted\",()=>pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get deleted book",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/books/{{bookId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "books",
+            "{{bookId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deleted book is absent\",()=>pm.response.to.have.status(404));",
+              "pm.expect(pm.response.json().error.code).to.eql(\"BOOK_NOT_FOUND\");"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

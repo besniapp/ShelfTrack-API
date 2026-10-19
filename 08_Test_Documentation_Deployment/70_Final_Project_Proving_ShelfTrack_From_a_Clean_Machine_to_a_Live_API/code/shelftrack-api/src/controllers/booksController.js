@@ -1,0 +1,6 @@
+import * as books from "../services/booksService.js";
+export async function listBooks(req,res){ const result=await books.listBooks(req.query); res.json({data:result.items,meta:result.meta}); }
+export async function getBook(req,res){ res.json({data:await books.getBook(req.params.bookId)}); }
+export async function createBook(req,res){ res.status(201).json({data:await books.createBook(req.body)}); }
+export async function updateBook(req,res){ res.json({data:await books.updateBook(req.params.bookId,req.body)}); }
+export async function deleteBook(req,res){ await books.deleteBook(req.params.bookId); res.status(204).end(); }

@@ -1,0 +1,10 @@
+import { Router } from "express";
+import * as c from "../controllers/loansController.js";
+import { validateBody } from "../middlewares/validateBody.js";
+import { validateObjectId } from "../middlewares/validateObjectId.js";
+import { createLoanSchema } from "../validators/loanSchemas.js";
+const router=Router();
+router.get("/",c.listLoans); router.post("/",validateBody(createLoanSchema),c.createLoan);
+router.get("/:loanId",validateObjectId("loanId"),c.getLoan);
+router.patch("/:loanId/return",validateObjectId("loanId"),c.returnLoan);
+export default router;

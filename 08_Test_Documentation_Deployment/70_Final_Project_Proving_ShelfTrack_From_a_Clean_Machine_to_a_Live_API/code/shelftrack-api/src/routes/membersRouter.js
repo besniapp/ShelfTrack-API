@@ -1,0 +1,10 @@
+import { Router } from "express";
+import * as c from "../controllers/membersController.js";
+import { validateBody } from "../middlewares/validateBody.js";
+import { validateObjectId } from "../middlewares/validateObjectId.js";
+import { createMemberSchema, updateMemberSchema } from "../validators/memberSchemas.js";
+const router=Router();
+router.get("/",c.listMembers); router.post("/",validateBody(createMemberSchema),c.createMember);
+router.get("/:memberId",validateObjectId("memberId"),c.getMember);
+router.patch("/:memberId",validateObjectId("memberId"),validateBody(updateMemberSchema),c.updateMember);
+export default router;

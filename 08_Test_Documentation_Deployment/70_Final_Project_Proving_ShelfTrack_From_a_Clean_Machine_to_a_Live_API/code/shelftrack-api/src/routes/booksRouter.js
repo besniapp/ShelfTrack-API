@@ -1,0 +1,11 @@
+import { Router } from "express";
+import * as c from "../controllers/booksController.js";
+import { validateBody } from "../middlewares/validateBody.js";
+import { validateObjectId } from "../middlewares/validateObjectId.js";
+import { createBookSchema, updateBookSchema } from "../validators/bookSchemas.js";
+const router=Router();
+router.get("/",c.listBooks); router.post("/",validateBody(createBookSchema),c.createBook);
+router.get("/:bookId",validateObjectId("bookId"),c.getBook);
+router.patch("/:bookId",validateObjectId("bookId"),validateBody(updateBookSchema),c.updateBook);
+router.delete("/:bookId",validateObjectId("bookId"),c.deleteBook);
+export default router;
